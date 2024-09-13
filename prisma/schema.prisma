@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model address_group {
+  id           BigInt         @id @default(autoincrement())
+  create_time  DateTime?      @db.DateTime(6)
+  update_time  DateTime?      @db.DateTime(6)
+  name         String?        @db.VarChar(255)
+  user_id      BigInt?
+  deleted      Boolean?       @default(dbgenerated("b'0'")) @db.Bit(1)
+  address_list address_list[]
+}
+
+model address_item {
+  id           BigInt        @id @default(autoincrement())
+  create_time  DateTime?     @db.DateTime(6)
+  update_time  DateTime?     @db.DateTime(6)
+  address      String?       @db.VarChar(255)
+  full_name    String?       @db.VarChar(255)
+  sex          String?       @db.VarChar(255)
+  list_id      BigInt?
+  deleted      Boolean?      @default(dbgenerated("b'0'")) @db.Bit(1)
+  address_list address_list? @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKkdufnw9ci8bmo9c3dg8u4tyye")
+
+  @@index([list_id], map: "FKkdufnw9ci8bmo9c3dg8u4tyye")
+}
+
+model address_list {
+  id            BigInt         @id @default(autoincrement())
+  create_time   DateTime?      @db.DateTime(6)
+  update_time   DateTime?      @db.DateTime(6)
+  active        Boolean?       @db.Bit(1)
+  name          String?        @db.VarChar(255)
+  user_id       BigInt?
+  group_id      BigInt?
+  deleted       Boolean?       @db.Bit(1)
+  address_item  address_item[]
+  address_group address_group? @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK3jlirooykmk4f2l9vowyw03ep")
+  task          task[]
+
+  @@index([group_id], map: "FK3jlirooykmk4f2l9vowyw03ep")
+}
+
+model local_storage {
+  id          BigInt    @id @default(autoincrement())
+  create_time DateTime? @db.DateTime(6)
+  update_time DateTime? @db.DateTime(6)
+  name        String?   @db.VarChar(255)
+  path        String?   @db.VarChar(255)
+  real_name   String?   @db.VarChar(255)
+  size        String?   @db.VarChar(255)
+  suffix      String?   @db.VarChar(255)
+  type        String?   @db.VarChar(255)
+  template    template?
+}
+
+model send_task {
+  id          BigInt    @id @default(autoincrement())
+  create_time DateTime? @db.DateTime(6)
+  update_time DateTime? @db.DateTime(6)
+  address     String?   @db.VarChar(255)
+  send_time   DateTime? @db.DateTime(6)
+  status      Int?      @db.TinyInt
+  task_id     BigInt?
+  has_read    Boolean?  @db.Bit(1)
+  resend_id   String?   @db.VarChar(255)
+  fail_reason String?   @db.MediumText
+  read_time   DateTime? @db.DateTime(6)
+  sim         Boolean?  @db.Bit(1)
+  task        task?     @relation(fields: [task_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKpgdfd1wflckowkah417tw8d87")
+
+  @@index([task_id], map: "FKpgdfd1wflckowkah417tw8d87")
+}
+
+model task {
+  id              BigInt        @id @default(autoincrement())
+  create_time     DateTime?     @db.DateTime(6)
+  update_time     DateTime?     @db.DateTime(6)
+  begin_time      DateTime?     @db.DateTime(6)
+  end_time        DateTime?     @db.DateTime(6)
+  name            String?       @db.VarChar(255)
+  status          Int?          @db.TinyInt
+  user_id         BigInt?
+  address_list_id BigInt?
+  template_id     BigInt?
+  reply_to        String?       @db.VarChar(255)
+  send_from       String?       @db.VarChar(255)
+  deleted         Boolean?      @db.Bit(1)
+  send_task       send_task[]
+  address_list    address_list? @relation(fields: [address_list_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKdw3a6hj03ty1hbcemsav9siqx")
+  template        template?     @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKpyymwnyum6gjqnslh0fqu0df0")
+
+  @@index([address_list_id], map: "FKdw3a6hj03ty1hbcemsav9siqx")
+  @@index([template_id], map: "FKpyymwnyum6gjqnslh0fqu0df0")
+}
+
+model template {
+  id            BigInt         @id @default(autoincrement())
+  create_time   DateTime?      @db.DateTime(6)
+  update_time   DateTime?      @db.DateTime(6)
+  content       String?        @db.MediumText
+  name          String?        @db.VarChar(255)
+  theme         String?        @db.VarChar(255)
+  user_id       BigInt?
+  deleted       Boolean?       @db.Bit(1)
+  attachment_id BigInt?        @unique(map: "UK1isccyxmknlt5gnn0n9ffsjai")
+  task          task[]
+  local_storage local_storage? @relation(fields: [attachment_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FKey6xt3bg5ycrr1sce9jnh5bas")
+}
+
+model user {
+  id          BigInt    @id @default(autoincrement())
+  create_time DateTime? @db.DateTime(6)
+  update_time DateTime? @db.DateTime(6)
+  password    String?   @db.VarChar(255)
+  username    String?   @db.VarChar(255)
+}
